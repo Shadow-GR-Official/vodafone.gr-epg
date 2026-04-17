@@ -1,112 +1,112 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="VodafoneGR-EPG-Fix">
   <channel id="87">
-    <display-name>Channel 87</display-name>
+    <display-name>DISCOVERY CHANNEL</display-name>
   </channel>
   <channel id="90">
-    <display-name>Channel 90</display-name>
+    <display-name>EXTREME TV</display-name>
   </channel>
   <channel id="100">
-    <display-name>Channel 100</display-name>
+    <display-name>HISTORY CHANNEL</display-name>
   </channel>
   <channel id="103">
-    <display-name>Channel 103</display-name>
+    <display-name>TV5 MONDE</display-name>
   </channel>
   <channel id="104">
-    <display-name>Channel 104</display-name>
+    <display-name>BBC WORLD NEWS</display-name>
   </channel>
   <channel id="109">
-    <display-name>Channel 109</display-name>
+    <display-name>FOOD NETWORK</display-name>
   </channel>
   <channel id="119">
-    <display-name>Channel 119</display-name>
+    <display-name>EURONEWS</display-name>
   </channel>
   <channel id="132">
-    <display-name>Channel 132</display-name>
+    <display-name>AL JAZEERA</display-name>
   </channel>
   <channel id="147">
-    <display-name>Channel 147</display-name>
+    <display-name>IDX</display-name>
   </channel>
   <channel id="148">
-    <display-name>Channel 148</display-name>
+    <display-name>SKY NEWS</display-name>
   </channel>
   <channel id="149">
-    <display-name>Channel 149</display-name>
+    <display-name>FRANCE 24 FR</display-name>
   </channel>
   <channel id="152">
-    <display-name>Channel 152</display-name>
+    <display-name>DISCOVERY TLC</display-name>
   </channel>
   <channel id="154">
-    <display-name>Channel 154</display-name>
+    <display-name>DISNEY CHANNEL</display-name>
   </channel>
   <channel id="157">
-    <display-name>Channel 157</display-name>
+    <display-name>NHK WORLD</display-name>
   </channel>
   <channel id="158">
-    <display-name>Channel 158</display-name>
+    <display-name>TRAVEL CHANNEL</display-name>
   </channel>
   <channel id="159">
-    <display-name>Channel 159</display-name>
+    <display-name>FX</display-name>
   </channel>
   <channel id="160">
-    <display-name>Channel 160</display-name>
+    <display-name>DISNEY JUNIOR</display-name>
   </channel>
   <channel id="161">
-    <display-name>Channel 161</display-name>
+    <display-name>NAT GEO WILD</display-name>
   </channel>
   <channel id="162">
-    <display-name>Channel 162</display-name>
+    <display-name>NATIONAL GEOGRAPHIC</display-name>
   </channel>
   <channel id="163">
-    <display-name>Channel 163</display-name>
+    <display-name>ANIMAL PLANET</display-name>
   </channel>
   <channel id="300">
-    <display-name>Channel 300</display-name>
+    <display-name>VF_PROMO</display-name>
   </channel>
   <channel id="376">
-    <display-name>Channel 376</display-name>
+    <display-name>CGTN</display-name>
   </channel>
   <channel id="380">
-    <display-name>Channel 380</display-name>
+    <display-name>FX Life</display-name>
   </channel>
   <channel id="381">
-    <display-name>Channel 381</display-name>
+    <display-name>LUXE TV</display-name>
   </channel>
   <channel id="382">
-    <display-name>Channel 382</display-name>
+    <display-name>E! Entertainment</display-name>
   </channel>
   <channel id="383">
-    <display-name>Channel 383</display-name>
+    <display-name>Motorvision HD</display-name>
   </channel>
   <channel id="386">
-    <display-name>Channel 386</display-name>
+    <display-name>TCM</display-name>
   </channel>
   <channel id="516">
-    <display-name>Channel 516</display-name>
+    <display-name>MyZen TV</display-name>
   </channel>
   <channel id="700">
-    <display-name>Channel 700</display-name>
+    <display-name>Arirang</display-name>
   </channel>
   <channel id="10006">
-    <display-name>Channel 10006</display-name>
+    <display-name>CNN</display-name>
   </channel>
   <channel id="10008">
-    <display-name>Channel 10008</display-name>
+    <display-name>EUROSPORT1</display-name>
   </channel>
   <channel id="10009">
-    <display-name>Channel 10009</display-name>
+    <display-name>EUROSPORT2</display-name>
   </channel>
   <channel id="10012">
-    <display-name>Channel 10012</display-name>
+    <display-name>MAD TV</display-name>
   </channel>
   <channel id="10015">
-    <display-name>Channel 10015</display-name>
+    <display-name>Insight TV</display-name>
   </channel>
   <channel id="10016">
-    <display-name>Channel 10016</display-name>
+    <display-name>Cartoonito</display-name>
   </channel>
   <channel id="10019">
-    <display-name>Channel 10019</display-name>
+    <display-name>MEGA CHANNEL</display-name>
   </channel>
 
   <programme start="20260417000000 +0300" stop="20260417010000 +0300" channel="87">
