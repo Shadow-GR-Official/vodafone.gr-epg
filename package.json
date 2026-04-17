@@ -1,0 +1,8 @@
+{
+  "name": "vodafone-epg-demo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "xmlbuilder2": "^3.1.1"
+  }
+}
