@@ -1,54 +1,60 @@
 const fs = require("fs");
 
-// Φόρτωση δεδομένων
 const raw = JSON.parse(fs.readFileSync("data/raw.json", "utf-8"));
+
+// 1. Εντοπισμός των προγραμμάτων (Η Vodafone τα έχει στο raw.programs)
+const allPrograms = raw.programs || [];
 
 function escapeXML(str = "") {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
 function fmt(dateValue) {
-  if (!dateValue) return "";
-  // Αν το timestamp είναι σε δευτερόλεπτα (10 ψηφία), το κάνουμε milliseconds
-  let val = Number(dateValue);
-  if (val < 10000000000) val *= 1000; 
+  if (!dateValue) return "19700101000000 +0300";
   
-  const d = new Date(val);
+  // Μετατροπή σε νούμερο αν είναι string timestamp
+  let val = Number(dateValue);
+  
+  // Αν το timestamp είναι σε δευτερόλεπτα (10 ψηφία), το κάνουμε milliseconds
+  if (val > 0 && val < 10000000000) val *= 1000; 
+  
+  const d = new Date(val || dateValue); // Δοκίμασε και ως string αν αποτύχει το νούμερο
+  
+  if (isNaN(d.getTime())) return "19700101000000 +0300";
+
   const pad = n => String(n).padStart(2, "0");
   return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + " +0300";
 }
 
-let channelNodes = "";
+// Χρησιμοποιούμε Map για να μαζέψουμε τα μοναδικά κανάλια που εμφανίζονται στα προγράμματα
+const channelsMap = new Map();
 let programmeNodes = "";
-let usedPrograms = 0;
 
-const channelIds = Object.keys(raw);
-
-channelIds.forEach(chId => {
-  const progs = raw[chId];
-  if (!Array.isArray(progs) || progs.length === 0) return;
-
-  // ΔΙΟΡΘΩΣΗ: Παίρνουμε το όνομα από το πρώτο αντικείμενο του array
-  const displayName = progs[0].channelName || `Channel ${chId}`;
+allPrograms.forEach(p => {
+  const chId = p.channelUuid || p.channelId || "unknown";
+  const chName = p.channelName || `Channel ${chId}`;
   
-  channelNodes += `  <channel id="${escapeXML(chId)}">\n`;
-  channelNodes += `    <display-name>${escapeXML(displayName)}</display-name>\n`;
-  channelNodes += `  </channel>\n`;
-
-  for (const p of progs) {
-    const start = p.startTime || p.since;
-    const end = p.endTime || p.till;
-    if (!start || !end) continue;
-
-    programmeNodes += `  <programme start="${fmt(start)}" stop="${fmt(end)}" channel="${escapeXML(chId)}">\n`;
-    programmeNodes += `    <title lang="el">${escapeXML(p.title || "Πρόγραμμα")}</title>\n`;
-    if (p.description) programmeNodes += `    <desc lang="el">${escapeXML(p.description)}</desc>\n`;
-    if (p.category) programmeNodes += `    <category lang="el">${escapeXML(p.category)}</category>\n`;
-    if (p.p_image) programmeNodes += `    <icon src="${escapeXML(p.p_image)}"/>\n`;
-    programmeNodes += `  </programme>\n`;
-    
-    usedPrograms++;
+  // Αποθήκευση καναλιού για το header
+  if (!channelsMap.has(chId)) {
+    channelsMap.set(chId, chName);
   }
+
+  const start = p.since || p.startTime;
+  const end = p.till || p.endTime;
+
+  programmeNodes += `  <programme start="${fmt(start)}" stop="${fmt(end)}" channel="${escapeXML(chId)}">\n`;
+  programmeNodes += `    <title lang="el">${escapeXML(p.title || "Πρόγραμμα")}</title>\n`;
+  if (p.description) programmeNodes += `    <desc lang="el">${escapeXML(p.description)}</desc>\n`;
+  if (p.category) programmeNodes += `    <category lang="el">${escapeXML(p.category)}</category>\n`;
+  programmeNodes += `  </programme>\n`;
+});
+
+// Φτιάχνουμε το channelNodes από το Map
+let channelNodes = "";
+channelsMap.forEach((name, id) => {
+  channelNodes += `  <channel id="${escapeXML(id)}">\n`;
+  channelNodes += `    <display-name>${escapeXML(name)}</display-name>\n`;
+  channelNodes += `  </channel>\n`;
 });
 
 const finalXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -57,9 +63,5 @@ ${channelNodes}
 ${programmeNodes}
 </tv>`;
 
-// Δημιουργία φακέλου αν δεν υπάρχει
-if (!fs.existsSync("data")) fs.mkdirSync("data");
-
 fs.writeFileSync("data/epg.xml", finalXml, "utf-8");
-
-console.log(`Έτοιμο! Μπήκαν ${channelIds.length} κανάλια και ${usedPrograms} προγράμματα.`);
+console.log(`Έτοιμο! Βρήκα ${channelsMap.size} κανάλια.`);
