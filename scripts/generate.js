@@ -2,24 +2,6 @@ const fs = require("fs");
 
 const raw = JSON.parse(fs.readFileSync("data/raw.json", "utf-8"));
 
-// ---------------- SAFE PROGRAMME EXTRACTION ----------------
-function extractProgrammes(data) {
-  if (!data) return [];
-
-  if (Array.isArray(data)) return data;
-
-  return (
-    data.programmes ||
-    data.events ||
-    data.items ||
-    data.data ||
-    []
-  );
-}
-
-const channels = raw.channels || [];
-const programmes = extractProgrammes(raw);
-
 // ---------------- XML ESCAPE ----------------
 function escapeXML(str = "") {
   return String(str)
@@ -32,8 +14,8 @@ function escapeXML(str = "") {
 
 // ---------------- XMLTV TIME ----------------
 function fmt(dateStr) {
+  if (!dateStr) return "";
   const d = new Date(dateStr);
-
   const pad = n => String(n).padStart(2, "0");
 
   return (
@@ -47,55 +29,55 @@ function fmt(dateStr) {
   );
 }
 
-let usedPrograms = 0;
-let skippedPrograms = 0;
-
 let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n\n`;
 
-// ---------------- CHANNELS ----------------
-for (const ch of channels) {
-  if (!ch?.uuid || !ch?.name) continue;
+let usedPrograms = 0;
+let channelCount = 0;
 
-  xml += `  <channel id="${escapeXML(ch.uuid)}">\n`;
-  xml += `    <display-name>${escapeXML(ch.name)}</display-name>\n`;
+// Το API της Vodafone επιστρέφει ένα αντικείμενο όπου τα keys είναι τα channel IDs
+// Παράδειγμα: { "101": [...προγράμματα...], "102": [...] }
+const channelIds = Object.keys(raw);
 
-  if (ch.logo) {
-    xml += `    <icon src="${escapeXML(ch.logo)}"/>\n`;
-  }
+// ---------------- CHANNELS & PROGRAMMES ----------------
+for (const chId of channelIds) {
+  const programmes = raw[chId];
+  if (!Array.isArray(programmes) || programmes.length === 0) continue;
 
+  // 1. Δημιουργία Channel Entry (Παίρνουμε το όνομα από το πρώτο πρόγραμμα αν δεν υπάρχει αλλού)
+  const channelName = programmes[0].channelName || chId;
+  xml += `  <channel id="${escapeXML(chId)}">\n`;
+  xml += `    <display-name>${escapeXML(channelName)}</display-name>\n`;
   xml += `  </channel>\n\n`;
-}
+  channelCount++;
 
-// ---------------- PROGRAMMES ----------------
-for (const p of programmes) {
-  if (!p?.channelUuid || !p?.since || !p?.till) {
-    skippedPrograms++;
-    continue;
+  // 2. Επεξεργασία Προγραμμάτων
+  for (const p of programmes) {
+    // Η Vodafone χρησιμοποιεί τα πεδία 'startTime' και 'endTime' (ή 'since'/'till')
+    // Προσαρμογή ανάλογα με το response:
+    const start = p.startTime || p.since;
+    const end = p.endTime || p.till;
+
+    if (!start || !end) continue;
+
+    xml += `  <programme start="${fmt(start)}" stop="${fmt(end)}" channel="${escapeXML(chId)}">\n`;
+    xml += `    <title lang="el">${escapeXML(p.title || "No Title")}</title>\n`;
+
+    if (p.description) {
+      xml += `    <desc lang="el">${escapeXML(p.description)}</desc>\n`;
+    }
+    
+    if (p.category) {
+      xml += `    <category lang="el">${escapeXML(p.category)}</category>\n`;
+    }
+
+    xml += `  </programme>\n\n`;
+    usedPrograms++;
   }
-
-  xml += `  <programme start="${fmt(p.since)}" stop="${fmt(p.till)}" channel="${escapeXML(p.channelUuid)}">\n`;
-
-  xml += `    <title>${escapeXML(p.title || "Πρόγραμμα")}</title>\n`;
-
-  if (p.description) {
-    xml += `    <desc>${escapeXML(p.description)}</desc>\n`;
-  }
-
-  if (p.category) {
-    xml += `    <category>${escapeXML(p.category)}</category>\n`;
-  }
-
-  xml += `  </programme>\n\n`;
-
-  usedPrograms++;
 }
 
 xml += `</tv>`;
 
 fs.writeFileSync("data/epg.xml", xml, "utf-8");
 
-// ---------------- DEBUG ----------------
-console.log("Channels:", channels.length);
-console.log("Programmes total:", programmes.length);
-console.log("Used programmes:", usedPrograms);
-console.log("Skipped programmes:", skippedPrograms);
+console.log("Σύνολο Καναλιών:", channelCount);
+console.log("Σύνολο Προγραμμάτων:", usedPrograms);
