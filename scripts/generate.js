@@ -1,52 +1,44 @@
 const fs = require("fs");
-const { create } = require("xmlbuilder2");
 
 const raw = JSON.parse(fs.readFileSync("data/raw.json", "utf-8"));
 
 const channels = raw.channels || [];
 const programmes = raw.programmes || raw.events || [];
 
-// debug timestamp
-const time_now = new Date().toISOString();
-fs.writeFileSync("data/time_now.txt", time_now);
-
-// convert ISO → XMLTV format
+// helper: ISO -> XMLTV format (+0300)
 function toXMLTV(dateStr) {
   const d = new Date(dateStr);
-  return d.toISOString().replace(/[-:]/g, "").split(".")[0] + " +0000";
+
+  const pad = (n) => String(n).padStart(2, "0");
+
+  return (
+    d.getUTCFullYear() +
+    pad(d.getUTCMonth() + 1) +
+    pad(d.getUTCDate()) +
+    pad(d.getUTCHours()) +
+    pad(d.getUTCMinutes()) +
+    pad(d.getUTCSeconds()) +
+    " +0300"
+  );
 }
 
-// ---------------- XMLTV ----------------
-const root = create({ version: "1.0" }).ele("tv");
+let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n\n`;
 
-// channels
+// CHANNELS
 channels.forEach(ch => {
-  root.ele("channel", { id: ch.uuid })
-    .ele("display-name").txt(ch.name).up()
-    .up();
+  xml += `  <channel id="${ch.uuid}">\n`;
+  xml += `    <display-name>${ch.name}</display-name>\n`;
+  xml += `  </channel>\n\n`;
 });
 
-// programmes
+// PROGRAMMES
 programmes.forEach(p => {
-  root.ele("programme", {
-    start: toXMLTV(p.since),
-    stop: toXMLTV(p.till),
-    channel: p.channelUuid
-  })
-    .ele("title").txt(p.title || "").up()
-    .ele("desc").txt(p.description || "").up()
-    .up();
+  xml += `  <programme start="${toXMLTV(p.since)}" stop="${toXMLTV(p.till)}" channel="${p.channelUuid}">\n`;
+  xml += `    <title>${p.title}</title>\n`;
+  xml += `    <category>${p.title}</category>\n`;
+  xml += `  </programme>\n\n`;
 });
 
-const xml = root.end({ prettyPrint: false });
+xml += `</tv>`;
+
 fs.writeFileSync("data/epg.xml", xml);
-
-// ---------------- DEMO M3U ----------------
-let m3u = "#EXTM3U\n";
-
-channels.forEach(ch => {
-  m3u += `#EXTINF:-1 tvg-id="${ch.uuid}" tvg-name="${ch.name}" tvg-logo="${ch.logo || ""}",${ch.name}\n`;
-  m3u += `http://dummy.stream/${ch.uuid}\n`;
-});
-
-fs.writeFileSync("data/channels.m3u", m3u);
