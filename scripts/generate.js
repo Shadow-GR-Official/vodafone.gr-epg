@@ -5,6 +5,17 @@ const raw = JSON.parse(fs.readFileSync("data/raw.json", "utf-8"));
 const channels = raw.channels || [];
 const programmes = raw.programmes || raw.events || [];
 
+// escape XML special chars
+function escapeXML(str = "") {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+// ISO -> XMLTV format
 function fmt(dateStr) {
   const d = new Date(dateStr);
 
@@ -21,31 +32,45 @@ function fmt(dateStr) {
   );
 }
 
-let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n`;
+let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n\n`;
 
-// CHANNELS
+// ---------------- CHANNELS ----------------
 for (const ch of channels) {
-  xml += `  <channel id="${ch.uuid}">\n`;
-  xml += `    <display-name>${ch.name}</display-name>\n`;
-  xml += `  </channel>\n`;
+  if (!ch?.uuid || !ch?.name) continue;
+
+  xml += `  <channel id="${escapeXML(ch.uuid)}">\n`;
+  xml += `    <display-name>${escapeXML(ch.name)}</display-name>\n`;
+
+  if (ch.logo) {
+    xml += `    <icon src="${escapeXML(ch.logo)}"/>\n`;
+  }
+
+  xml += `  </channel>\n\n`;
 }
 
-// PROGRAMMES
+// ---------------- PROGRAMMES ----------------
 for (const p of programmes) {
-  xml += `  <programme start="${fmt(p.since)}" stop="${fmt(p.till)}" channel="${p.channelUuid}">\n`;
-  xml += `    <title>${p.title}</title>\n`;
+  if (!p?.channelUuid || !p?.since || !p?.till) continue;
 
+  xml += `  <programme start="${fmt(p.since)}" stop="${fmt(p.till)}" channel="${escapeXML(p.channelUuid)}">\n`;
+
+  // title (fallback αν είναι άδειο)
+  xml += `    <title>${escapeXML(p.title || "Πρόγραμμα")}</title>\n`;
+
+  // description optional
   if (p.description) {
-    xml += `    <desc>${p.description}</desc>\n`;
+    xml += `    <desc>${escapeXML(p.description)}</desc>\n`;
   }
 
+  // category optional (πολλές φορές είναι generic)
   if (p.category) {
-    xml += `    <category>${p.category}</category>\n`;
+    xml += `    <category>${escapeXML(p.category)}</category>\n`;
   }
 
-  xml += `  </programme>\n`;
+  xml += `  </programme>\n\n`;
 }
 
 xml += `</tv>`;
 
-fs.writeFileSync("data/epg.xml", xml);
+// write file
+fs.writeFileSync("data/epg.xml", xml, "utf-8");
