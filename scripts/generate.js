@@ -5,39 +5,49 @@ const raw = JSON.parse(fs.readFileSync("data/raw.json", "utf-8"));
 const channels = raw.channels || [];
 const programmes = raw.programmes || raw.events || [];
 
-// helper: ISO -> XMLTV format (+0300)
+// helper: ISO -> XMLTV
 function toXMLTV(dateStr) {
   const d = new Date(dateStr);
 
   const pad = (n) => String(n).padStart(2, "0");
 
   return (
-    d.getUTCFullYear() +
-    pad(d.getUTCMonth() + 1) +
-    pad(d.getUTCDate()) +
-    pad(d.getUTCHours()) +
-    pad(d.getUTCMinutes()) +
-    pad(d.getUTCSeconds()) +
+    d.getFullYear() +
+    pad(d.getMonth() + 1) +
+    pad(d.getDate()) +
+    pad(d.getHours()) +
+    pad(d.getMinutes()) +
+    pad(d.getSeconds()) +
     " +0300"
   );
 }
 
+// DEBUG (για να δεις αν όντως έρχονται programmes)
+console.log("channels:", channels.length);
+console.log("programmes:", programmes.length);
+
 let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n\n`;
 
 // CHANNELS
-channels.forEach(ch => {
+for (const ch of channels) {
   xml += `  <channel id="${ch.uuid}">\n`;
   xml += `    <display-name>${ch.name}</display-name>\n`;
   xml += `  </channel>\n\n`;
-});
+}
 
 // PROGRAMMES
-programmes.forEach(p => {
+for (const p of programmes) {
+  if (!p.channelUuid || !p.title) continue;
+
   xml += `  <programme start="${toXMLTV(p.since)}" stop="${toXMLTV(p.till)}" channel="${p.channelUuid}">\n`;
   xml += `    <title>${p.title}</title>\n`;
-  xml += `    <category>${p.title}</category>\n`;
+
+  if (p.description) {
+    xml += `    <desc>${p.description}</desc>\n`;
+  }
+
   xml += `  </programme>\n\n`;
-});
+}
 
 xml += `</tv>`;
 
