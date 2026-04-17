@@ -2,8 +2,23 @@ const fs = require("fs");
 
 const raw = JSON.parse(fs.readFileSync("data/raw.json", "utf-8"));
 
+// ---------------- SAFE PROGRAMME EXTRACTION ----------------
+function extractProgrammes(data) {
+  if (!data) return [];
+
+  if (Array.isArray(data)) return data;
+
+  return (
+    data.programmes ||
+    data.events ||
+    data.items ||
+    data.data ||
+    []
+  );
+}
+
 const channels = raw.channels || [];
-const programmes = raw.programmes || raw.events || [];
+const programmes = extractProgrammes(raw);
 
 // ---------------- XML ESCAPE ----------------
 function escapeXML(str = "") {
@@ -32,14 +47,6 @@ function fmt(dateStr) {
   );
 }
 
-// ---------------- INDEX CHANNELS (IMPORTANT FIX) ----------------
-// map uuid → channel object
-const channelMap = new Map();
-for (const ch of channels) {
-  if (ch?.uuid) channelMap.set(String(ch.uuid), ch);
-}
-
-// DEBUG counters
 let usedPrograms = 0;
 let skippedPrograms = 0;
 
@@ -59,15 +66,9 @@ for (const ch of channels) {
   xml += `  </channel>\n\n`;
 }
 
-// ---------------- PROGRAMMES (FIXED LOGIC) ----------------
+// ---------------- PROGRAMMES ----------------
 for (const p of programmes) {
   if (!p?.channelUuid || !p?.since || !p?.till) {
-    skippedPrograms++;
-    continue;
-  }
-
-  // IMPORTANT: ensure channel exists
-  if (!channelMap.has(String(p.channelUuid))) {
     skippedPrograms++;
     continue;
   }
@@ -91,10 +92,9 @@ for (const p of programmes) {
 
 xml += `</tv>`;
 
-// write file
 fs.writeFileSync("data/epg.xml", xml, "utf-8");
 
-// ---------------- DEBUG OUTPUT ----------------
+// ---------------- DEBUG ----------------
 console.log("Channels:", channels.length);
 console.log("Programmes total:", programmes.length);
 console.log("Used programmes:", usedPrograms);
