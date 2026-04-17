@@ -24,12 +24,14 @@ jobs:
       - name: Create data folder
         run: mkdir -p data
 
-      - name: Set current date
-        run: echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+      - name: Set current date (Athens Time)
+        # Χρησιμοποιούμε TZ=Europe/Athens για να έχουμε πάντα την ημερομηνία Ελλάδας
+        run: echo "TODAY=$(TZ=Europe/Athens date +'%Y-%m-%d')" >> $GITHUB_ENV
 
       - name: Fetch Vodafone JSON (EPG)
         run: |
-          curl -o data/raw.json "https://www.vodafone.gr/api/tv/programma-live/{{ env.TODAY }}"
+          # Χρησιμοποιούμε $TODAY για να το διαβάσει σωστά η bash εντολή curl
+          curl -o data/raw.json "https://www.vodafone.gr/api/tv/programma-live/"
 
       - name: Generate XMLTV + M3U
         run: node scripts/generate.js
@@ -39,6 +41,6 @@ jobs:
           git config --global user.name "epg-bot"
           git config --global user.email "bot@example.com"
           git add data/
-          # Χρήση του ${{ env.TODAY }} για να εμφανίζεται η ημερομηνία στο commit message
-          git diff --quiet && git diff --staged --quiet || git commit -m "EPG update ${{ env.TODAY }}"
+          # Εδώ χρησιμοποιούμε τη σύνταξη του GitHub Actions για το commit message
+          git diff --quiet && git diff --staged --quiet || git commit -m "EPG update ${ env.TODAY }"
           git push
