@@ -31,7 +31,7 @@ jobs:
       - name: Fetch Vodafone JSON (EPG)
         run: |
           # Χρησιμοποιούμε $TODAY για να το διαβάσει σωστά η bash εντολή curl
-          curl -o data/raw.json "https://www.vodafone.gr/api/tv/programma-live/"
+          curl -o data/raw.json "https://www.vodafone.gr/api/tv/programma-live/$TODAY"
 
       - name: Generate XMLTV + M3U
         run: node scripts/generate.js
