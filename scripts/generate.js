@@ -1,83 +1,61 @@
 const fs = require("fs");
 
+// Φόρτωση δεδομένων
 const raw = JSON.parse(fs.readFileSync("data/raw.json", "utf-8"));
 
-// ---------------- XML ESCAPE ----------------
 function escapeXML(str = "") {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-// ---------------- XMLTV TIME ----------------
 function fmt(dateStr) {
   if (!dateStr) return "";
   const d = new Date(dateStr);
   const pad = n => String(n).padStart(2, "0");
-
-  return (
-    d.getFullYear() +
-    pad(d.getMonth() + 1) +
-    pad(d.getDate()) +
-    pad(d.getHours()) +
-    pad(d.getMinutes()) +
-    pad(d.getSeconds()) +
-    " +0300"
-  );
+  return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + " +0300";
 }
 
-let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n\n`;
-
+let channelNodes = "";
+let programmeNodes = "";
 let usedPrograms = 0;
-let channelCount = 0;
 
-// Το API της Vodafone επιστρέφει ένα αντικείμενο όπου τα keys είναι τα channel IDs
-// Παράδειγμα: { "101": [...προγράμματα...], "102": [...] }
 const channelIds = Object.keys(raw);
 
-// ---------------- CHANNELS & PROGRAMMES ----------------
-for (const chId of channelIds) {
-  const programmes = raw[chId];
-  if (!Array.isArray(programmes) || programmes.length === 0) continue;
+channelIds.forEach(chId => {
+  const progs = raw[chId];
+  if (!Array.isArray(progs) || progs.length === 0) return;
 
-  // 1. Δημιουργία Channel Entry (Παίρνουμε το όνομα από το πρώτο πρόγραμμα αν δεν υπάρχει αλλού)
-  const channelName = programmes[0].channelName || chId;
-  xml += `  <channel id="${escapeXML(chId)}">\n`;
-  xml += `    <display-name>${escapeXML(channelName)}</display-name>\n`;
-  xml += `  </channel>\n\n`;
-  channelCount++;
+  // 1. Φτιάχνουμε τη λίστα των καναλιών (στο header)
+  // Επειδή το API έχει μόνο IDs, χρησιμοποιούμε το ID ως όνομα αν δεν υπάρχει info
+  const displayName = progs[0].channelName || `Channel ${chId}`;
+  
+  channelNodes += `  <channel id="${escapeXML(chId)}">\n`;
+  channelNodes += `    <display-name>${escapeXML(displayName)}</display-name>\n`;
+  channelNodes += `  </channel>\n`;
 
-  // 2. Επεξεργασία Προγραμμάτων
-  for (const p of programmes) {
-    // Η Vodafone χρησιμοποιεί τα πεδία 'startTime' και 'endTime' (ή 'since'/'till')
-    // Προσαρμογή ανάλογα με το response:
+  // 2. Μαζεύουμε όλα τα προγράμματα
+  for (const p of progs) {
     const start = p.startTime || p.since;
     const end = p.endTime || p.till;
-
     if (!start || !end) continue;
 
-    xml += `  <programme start="${fmt(start)}" stop="${fmt(end)}" channel="${escapeXML(chId)}">\n`;
-    xml += `    <title lang="el">${escapeXML(p.title || "No Title")}</title>\n`;
-
-    if (p.description) {
-      xml += `    <desc lang="el">${escapeXML(p.description)}</desc>\n`;
-    }
+    programmeNodes += `  <programme start="${fmt(start)}" stop="${fmt(end)}" channel="${escapeXML(chId)}">\n`;
+    programmeNodes += `    <title lang="el">${escapeXML(p.title || "Πρόγραμμα")}</title>\n`;
+    if (p.description) programmeNodes += `    <desc lang="el">${escapeXML(p.description)}</desc>\n`;
+    if (p.category) programmeNodes += `    <category lang="el">${escapeXML(p.category)}</category>\n`;
+    if (p.p_image) programmeNodes += `    <icon src="${escapeXML(p.p_image)}"/>\n`;
+    programmeNodes += `  </programme>\n`;
     
-    if (p.category) {
-      xml += `    <category lang="el">${escapeXML(p.category)}</category>\n`;
-    }
-
-    xml += `  </programme>\n\n`;
     usedPrograms++;
   }
-}
+});
 
-xml += `</tv>`;
+// Ενώνουμε τα κομμάτια σωστά
+const finalXml = `<?xml version="1.0" encoding="UTF-8"?>
+<tv generator-info-name="VodafoneGR-EPG-Fix">
+${channelNodes}
+${programmeNodes}
+</tv>`;
 
-fs.writeFileSync("data/epg.xml", xml, "utf-8");
+fs.writeFileSync("data/epg.xml", finalXml, "utf-8");
 
-console.log("Σύνολο Καναλιών:", channelCount);
-console.log("Σύνολο Προγραμμάτων:", usedPrograms);
+console.log(`Έτοιμο! Μπήκαν ${channelIds.length} κανάλια και ${usedPrograms} προγράμματα.`);
