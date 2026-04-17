@@ -5,9 +5,9 @@ const raw = JSON.parse(fs.readFileSync("data/raw.json", "utf-8"));
 const channels = raw.channels || [];
 const programmes = raw.programmes || raw.events || [];
 
-// escape XML special chars
+// ---------------- XML ESCAPE ----------------
 function escapeXML(str = "") {
-  return str
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -15,7 +15,7 @@ function escapeXML(str = "") {
     .replace(/'/g, "&apos;");
 }
 
-// ISO -> XMLTV format
+// ---------------- XMLTV TIME ----------------
 function fmt(dateStr) {
   const d = new Date(dateStr);
 
@@ -31,6 +31,17 @@ function fmt(dateStr) {
     " +0300"
   );
 }
+
+// ---------------- INDEX CHANNELS (IMPORTANT FIX) ----------------
+// map uuid → channel object
+const channelMap = new Map();
+for (const ch of channels) {
+  if (ch?.uuid) channelMap.set(String(ch.uuid), ch);
+}
+
+// DEBUG counters
+let usedPrograms = 0;
+let skippedPrograms = 0;
 
 let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<tv>\n\n`;
 
@@ -48,29 +59,43 @@ for (const ch of channels) {
   xml += `  </channel>\n\n`;
 }
 
-// ---------------- PROGRAMMES ----------------
+// ---------------- PROGRAMMES (FIXED LOGIC) ----------------
 for (const p of programmes) {
-  if (!p?.channelUuid || !p?.since || !p?.till) continue;
+  if (!p?.channelUuid || !p?.since || !p?.till) {
+    skippedPrograms++;
+    continue;
+  }
+
+  // IMPORTANT: ensure channel exists
+  if (!channelMap.has(String(p.channelUuid))) {
+    skippedPrograms++;
+    continue;
+  }
 
   xml += `  <programme start="${fmt(p.since)}" stop="${fmt(p.till)}" channel="${escapeXML(p.channelUuid)}">\n`;
 
-  // title (fallback αν είναι άδειο)
   xml += `    <title>${escapeXML(p.title || "Πρόγραμμα")}</title>\n`;
 
-  // description optional
   if (p.description) {
     xml += `    <desc>${escapeXML(p.description)}</desc>\n`;
   }
 
-  // category optional (πολλές φορές είναι generic)
   if (p.category) {
     xml += `    <category>${escapeXML(p.category)}</category>\n`;
   }
 
   xml += `  </programme>\n\n`;
+
+  usedPrograms++;
 }
 
 xml += `</tv>`;
 
 // write file
 fs.writeFileSync("data/epg.xml", xml, "utf-8");
+
+// ---------------- DEBUG OUTPUT ----------------
+console.log("Channels:", channels.length);
+console.log("Programmes total:", programmes.length);
+console.log("Used programmes:", usedPrograms);
+console.log("Skipped programmes:", skippedPrograms);
