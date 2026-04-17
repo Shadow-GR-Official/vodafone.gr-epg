@@ -7,9 +7,13 @@ function escapeXML(str = "") {
   return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
-function fmt(dateStr) {
-  if (!dateStr) return "";
-  const d = new Date(dateStr);
+function fmt(dateValue) {
+  if (!dateValue) return "";
+  // Αν το timestamp είναι σε δευτερόλεπτα (10 ψηφία), το κάνουμε milliseconds
+  let val = Number(dateValue);
+  if (val < 10000000000) val *= 1000; 
+  
+  const d = new Date(val);
   const pad = n => String(n).padStart(2, "0");
   return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + " +0300";
 }
@@ -24,15 +28,13 @@ channelIds.forEach(chId => {
   const progs = raw[chId];
   if (!Array.isArray(progs) || progs.length === 0) return;
 
-  // 1. Φτιάχνουμε τη λίστα των καναλιών (στο header)
-  // Επειδή το API έχει μόνο IDs, χρησιμοποιούμε το ID ως όνομα αν δεν υπάρχει info
+  // ΔΙΟΡΘΩΣΗ: Παίρνουμε το όνομα από το πρώτο αντικείμενο του array
   const displayName = progs[0].channelName || `Channel ${chId}`;
   
   channelNodes += `  <channel id="${escapeXML(chId)}">\n`;
   channelNodes += `    <display-name>${escapeXML(displayName)}</display-name>\n`;
   channelNodes += `  </channel>\n`;
 
-  // 2. Μαζεύουμε όλα τα προγράμματα
   for (const p of progs) {
     const start = p.startTime || p.since;
     const end = p.endTime || p.till;
@@ -49,12 +51,14 @@ channelIds.forEach(chId => {
   }
 });
 
-// Ενώνουμε τα κομμάτια σωστά
 const finalXml = `<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="VodafoneGR-EPG-Fix">
 ${channelNodes}
 ${programmeNodes}
 </tv>`;
+
+// Δημιουργία φακέλου αν δεν υπάρχει
+if (!fs.existsSync("data")) fs.mkdirSync("data");
 
 fs.writeFileSync("data/epg.xml", finalXml, "utf-8");
 
