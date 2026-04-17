@@ -24,13 +24,11 @@ jobs:
       - name: Create data folder
         run: mkdir -p data
 
-      - name: Set current date
-        run: echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-
       - name: Fetch Vodafone JSON (EPG)
         run: |
+          TODAY=$(date +'%Y-%m-%d')
           curl -o data/raw.json "https://www.vodafone.gr/api/tv/programma-live/{TODAY}"
-          
+
       - name: Generate XMLTV + M3U
         run: node scripts/generate.js
 
