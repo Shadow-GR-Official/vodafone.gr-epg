@@ -1,0 +1,46 @@
+name: Vodafone.gr EPG Builder v17.04 2026
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # κάθε ώρα
+  workflow_dispatch:
+
+jobs:
+  update-tv:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install xmlbuilder2
+
+      - name: Create data folder
+        run: mkdir -p data
+
+      - name: Set current date
+        run: echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: Fetch Vodafone JSON (EPG)
+        run: |
+          curl -o data/raw.json "https://www.vodafone.gr/api/tv/programma-live/${TODAY}"
+
+      - name: Generate XMLTV + M3U
+        run: node scripts/generate.js
+
+      - name: Commit & push
+        run: |
+          git config --global user.name "epg-bot"
+          git config --global user.email "bot@example.com"
+
+          git add data/
+
+          git diff --quiet && git diff --staged --quiet || git commit -m "EPG update ${TODAY}"
+
+          git push
