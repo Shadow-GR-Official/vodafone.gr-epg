@@ -93,7 +93,7 @@ allPrograms.forEach(p => {
 });
 
 const finalXml = `<?xml version="1.0" encoding="UTF-8"?>
-<tv generator-info-name="Vodafone EPG Builder">
+<tv>
 ${channelNodes}
 ${programmeNodes}
 </tv>`;
