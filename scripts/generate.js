@@ -57,7 +57,7 @@ function fmt(dateValue) {
   parts.forEach(part => p[part.type] = part.value);
 
   // Επιστρέφει YYYYMMDDHHMMSS +0300
-  return `${p.year}${p.month}${p.day}${p.hour}${p.minute}${p.second} +0300`;
+  return `${p.year}${p.month}${p.day}${p.hour}${p.minute}${p.second}+0300`;
 }
 
 let channelNodes = "";
