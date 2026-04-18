@@ -94,8 +94,8 @@ allPrograms.forEach(p => {
 
 const finalXml = `<?xml version="1.0" encoding="UTF-8"?>
 <tv>
-${channelNodes}
-${programmeNodes}
+${channelNodes.trimEnd()}
+${programmeNodes.trimEnd()}
 </tv>`;
 
 // Διασφάλιση ότι υπάρχει ο φάκελος data
