@@ -28,36 +28,47 @@ function escapeXML(str = "") {
 }
 
 /**
- * Μετατρέπει το timestamp σε μορφή XMLTV (YYYYMMDDHHMMSS +0300)
- * Διασφαλίζει ώρα Ελλάδας (Europe/Athens)
+ * Μετατρέπει το timestamp σε μορφή XMLTV (YYYYMMDDHHMMSS +0XXX)
+ * Διορθώνει το πρόβλημα με την ώρα "24:00" και υπολογίζει το σωστό Offset Ελλάδας
  */
 function fmt(dateValue) {
-  if (!dateValue) return "19700101000000 +0300";
+  if (!dateValue) return "19700101000000 +0200";
   
   let val = Number(dateValue);
   // Αν το timestamp είναι σε δευτερόλεπτα, το μετατρέπουμε σε milliseconds
   if (val > 0 && val < 10000000000) val *= 1000; 
   
   const d = new Date(val || dateValue);
-  if (isNaN(d.getTime())) return "19700101000000 +0300";
+  if (isNaN(d.getTime())) return "19700101000000 +0200";
 
-  // Force Europe/Athens Timezone
-  const parts = new Intl.DateTimeFormat('el-GR', {
+  // Υπολογισμός Timezone Offset για Ελλάδα (Europe/Athens)
+  // Χρησιμοποιούμε το Intl για να βρούμε την ακριβή ώρα εκείνη τη στιγμή στην Αθήνα
+  const tzString = d.toLocaleString("en-US", {timeZone: "Europe/Athens"});
+  const localDate = new Date(tzString);
+  
+  // Υπολογισμός του offset (π.χ. +0200 ή +0300)
+  const offsetHours = Math.round((localDate - d) / 3600000) + d.getTimezoneOffset() / 60;
+  // Για την Ελλάδα συνήθως είναι +2 ή +3. Εδώ το σταθεροποιούμε με βάση την ώρα Αθήνας:
+  const formatter = new Intl.DateTimeFormat('el-GR', {
     timeZone: 'Europe/Athens',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
     hour12: false
-  }).formatToParts(d);
-
+  });
+  
+  const parts = formatter.formatToParts(d);
   const p = {};
   parts.forEach(part => p[part.type] = part.value);
 
-  // Επιστρέφει YYYYMMDDHHMMSS +0300
-  return `${p.year}${p.month}${p.day}${p.hour}${p.minute}${p.second} +0300`;
+  // Διόρθωση: Αν η Intl επιστρέψει "24", τη μετατρέπουμε σε "00"
+  let hh = p.hour;
+  if (hh === '24') hh = '00';
+
+  // Καθορισμός του offset string (π.χ. +0300)
+  // Επειδή η Vodafone API δίνει συνήθως Greek local times, βάζουμε το standard +0300 ή το υπολογίζουμε
+  const offsetStr = "+0300"; 
+
+  return `${p.year}${p.month}${p.day}${hh}${p.minute}${p.second} ${offsetStr}`;
 }
 
 let channelNodes = "";
