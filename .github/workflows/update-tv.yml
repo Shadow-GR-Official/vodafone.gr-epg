@@ -1,4 +1,4 @@
-name: Vodafone.gr EPG Builder v17.04 2026
+name: Vodafone.gr EPG Builder v18.04 2026
 
 on:
   schedule:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TZ: Europe/Athens   # ✅ σωστή Ελλάδα ώρα παντού
+      TZ: Europe/Athens
 
     steps:
       - name: Checkout repo
@@ -32,12 +32,22 @@ jobs:
       - name: Create data folder
         run: mkdir -p data
 
-      - name: Set current date (Athens Time)
-        run: echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-
-      - name: Fetch Vodafone JSON (EPG)
+      - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          curl -L -o data/raw.json "https://www.vodafone.gr/api/tv/programma-live/$TODAY"
+          for i in {0..6}
+          do
+            DATE=$(date -d "+$i day" +'%Y-%m-%d')
+            echo "Fetching $DATE"
+
+            curl -s -L "https://www.vodafone.gr/api/tv/programma-live/$DATE" \
+              -o "data/raw_$DATE.json"
+
+            # αν το αρχείο είναι άδειο, διαγραφή
+            if [ ! -s "data/raw_$DATE.json" ]; then
+              echo "No data for $DATE"
+              rm -f "data/raw_$DATE.json"
+            fi
+          done
 
       - name: Generate XMLTV + M3U
         run: node scripts/generate.js
@@ -54,5 +64,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "EPG update $TODAY"
+          git commit -m "EPG update $(date +'%Y-%m-%d %H:%M')"
           git push
