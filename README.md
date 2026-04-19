@@ -9,3 +9,5 @@ https://github.com/Shadow-GR-Official/vodafone.gr-epg/blob/main/data/channels.m3
 Για να λειτουργήσει σωστά ο ηλεκτρονικός οδηγός προγράμματος,
 θα πρέπει το tvg-id να είναι ακριβώς ίδιο με αυτό της .m3u λίστας. 
 Παράδειγμα: tvg-id="300" tvg-name="VF_PROMO"
+
+EPG URL: https://github.com/Shadow-GR-Official/vodafone.gr-epg/raw/refs/heads/main/data/epg.xml
