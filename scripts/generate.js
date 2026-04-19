@@ -1,22 +1,18 @@
 const fs = require("fs");
+const path = require("path");
 
-// Έλεγχος αν υπάρχει το αρχείο πριν το διαβάσουμε
-if (!fs.existsSync("data/raw.json")) {
-    console.error("Error: data/raw.json not found!");
-    process.exit(1);
+const DATA_DIR = "data";
+
+// βρίσκουμε όλα τα raw_*.json
+const files = fs.readdirSync(DATA_DIR)
+  .filter(f => f.startsWith("raw_") && f.endsWith(".json"));
+
+if (!files.length) {
+  console.error("No raw_*.json files found!");
+  process.exit(1);
 }
 
-const raw = JSON.parse(fs.readFileSync("data/raw.json", "utf-8"));
-
-// 1. Φτιάχνουμε ένα "λεξικό" (Map) με τα ονόματα των καναλιών
-const channelNamesMap = {};
-if (Array.isArray(raw.channels)) {
-  raw.channels.forEach(ch => {
-    if (ch.uuid) {
-      channelNamesMap[ch.uuid] = ch.name;
-    }
-  });
-}
+// ------------------ helpers ------------------
 
 function escapeXML(str = "") {
   return String(str)
@@ -27,81 +23,121 @@ function escapeXML(str = "") {
     .replace(/'/g, "&apos;");
 }
 
-/**
- * Μετατρέπει το timestamp σε μορφή XMLTV (YYYYMMDDHHMMSS +0XXX)
- * Διορθώνει το πρόβλημα με την ώρα "24:00" και υπολογίζει το σωστό Offset Ελλάδας
- */
+// σωστό XMLTV datetime με Europe/Athens offset (DST safe)
 function fmt(dateValue) {
-  if (!dateValue) return "19700101000000 +0200";
-  
+  if (!dateValue) return null;
+
   let val = Number(dateValue);
-  // Αν το timestamp είναι σε δευτερόλεπτα, το μετατρέπουμε σε milliseconds
-  if (val > 0 && val < 10000000000) val *= 1000; 
-  
+  if (val > 0 && val < 10000000000) val *= 1000;
+
   const d = new Date(val || dateValue);
-  if (isNaN(d.getTime())) return "19700101000000 +0200";
+  if (isNaN(d.getTime())) return null;
 
-  // Υπολογισμός Timezone Offset για Ελλάδα (Europe/Athens)
-  // Χρησιμοποιούμε το Intl για να βρούμε την ακριβή ώρα εκείνη τη στιγμή στην Αθήνα
-  const tzString = d.toLocaleString("en-US", {timeZone: "Europe/Athens"});
-  const localDate = new Date(tzString);
-  
-  // Υπολογισμός του offset (π.χ. +0200 ή +0300)
-  const offsetHours = Math.round((localDate - d) / 3600000) + d.getTimezoneOffset() / 60;
-  // Για την Ελλάδα συνήθως είναι +2 ή +3. Εδώ το σταθεροποιούμε με βάση την ώρα Αθήνας:
-  const formatter = new Intl.DateTimeFormat('el-GR', {
-    timeZone: 'Europe/Athens',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Athens",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
     hour12: false
-  });
-  
-  const parts = formatter.formatToParts(d);
+  }).formatToParts(d);
+
   const p = {};
-  parts.forEach(part => p[part.type] = part.value);
+  parts.forEach(x => p[x.type] = x.value);
 
-  // Διόρθωση: Αν η Intl επιστρέψει "24", τη μετατρέπουμε σε "00"
-  let hh = p.hour;
-  if (hh === '24') hh = '00';
+  let hh = p.hour === "24" ? "00" : p.hour;
 
-  // Καθορισμός του offset string (π.χ. +0300)
-  // Επειδή η Vodafone API δίνει συνήθως Greek local times, βάζουμε το standard +0300 ή το υπολογίζουμε
-  const offsetStr = "+0300"; 
+  // υπολογισμός offset σωστά (+0200 / +0300)
+  const tzOffset = -new Date(d.toLocaleString("en-US", { timeZone: "UTC" }))
+    .getTimezoneOffset();
+
+  const offsetHours = Math.floor(tzOffset / 60);
+  const offsetStr = `${offsetHours >= 0 ? "+" : "-"}${String(Math.abs(offsetHours)).padStart(2, "0")}00`;
 
   return `${p.year}${p.month}${p.day}${hh}${p.minute}${p.second} ${offsetStr}`;
 }
+
+// ------------------ merge data ------------------
+
+let channelNamesMap = {};
+let allPrograms = [];
+
+// φόρτωση όλων των ημερών
+files.forEach(file => {
+  const raw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf-8"));
+
+  if (Array.isArray(raw.channels)) {
+    raw.channels.forEach(ch => {
+      if (ch.uuid) channelNamesMap[ch.uuid] = ch.name;
+    });
+  }
+
+  if (Array.isArray(raw.programs)) {
+    allPrograms.push(...raw.programs);
+  }
+});
+
+// ------------------ dedupe ------------------
+
+const seen = new Set();
+const cleanPrograms = [];
+
+allPrograms.forEach(p => {
+  const key = `${p.channelUuid}-${p.since || p.startTime}-${p.till || p.endTime}`;
+
+  if (!seen.has(key)) {
+    seen.add(key);
+    cleanPrograms.push(p);
+  }
+});
+
+// sort by channel + time
+cleanPrograms.sort((a, b) => {
+  const chA = a.channelUuid || "";
+  const chB = b.channelUuid || "";
+
+  if (chA !== chB) return chA.localeCompare(chB);
+
+  return (a.since || a.startTime) - (b.since || b.startTime);
+});
+
+// ------------------ build XML ------------------
 
 let channelNodes = "";
 let programmeNodes = "";
 const foundChannelIds = new Set();
 
-// 2. Επεξεργασία προγραμμάτων
-const allPrograms = raw.programs || [];
-
-allPrograms.forEach(p => {
+cleanPrograms.forEach(p => {
   const chId = p.channelUuid || "unknown";
-  
-  // Δημιουργία <channel> tag αν δεν υπάρχει ήδη
+
   if (!foundChannelIds.has(chId)) {
-    const realName = channelNamesMap[chId] || `Channel ${chId}`;
+    const name = channelNamesMap[chId] || `Channel ${chId}`;
+
     channelNodes += `  <channel id="${escapeXML(chId)}">\n`;
-    channelNodes += `    <display-name>${escapeXML(realName)}</display-name>\n`;
+    channelNodes += `    <display-name>${escapeXML(name)}</display-name>\n`;
     channelNodes += `  </channel>\n`;
+
     foundChannelIds.add(chId);
   }
 
-  const start = p.since || p.startTime;
-  const end = p.till || p.endTime;
+  const start = fmt(p.since || p.startTime);
+  const end = fmt(p.till || p.endTime);
 
-  if (start && end) {
-    programmeNodes += `  <programme start="${fmt(start)}" stop="${fmt(end)}" channel="${escapeXML(chId)}">\n`;
-    programmeNodes += `    <title lang="el">${escapeXML(p.title || "Πρόγραμμα")}</title>\n`;
-    if (p.description) {
-        programmeNodes += `    <desc lang="el">${escapeXML(p.description)}</desc>\n`;
-    }
-    programmeNodes += `  </programme>\n`;
+  if (!start || !end) return;
+
+  programmeNodes += `  <programme start="${start}" stop="${end}" channel="${escapeXML(chId)}">\n`;
+  programmeNodes += `    <title lang="el">${escapeXML(p.title || "Πρόγραμμα")}</title>\n`;
+
+  if (p.description) {
+    programmeNodes += `    <desc lang="el">${escapeXML(p.description)}</desc>\n`;
   }
+
+  programmeNodes += `  </programme>\n`;
 });
+
+// ------------------ write file ------------------
 
 const finalXml = `<?xml version="1.0" encoding="UTF-8"?>
 <tv>
@@ -109,8 +145,6 @@ ${channelNodes.trimEnd()}
 ${programmeNodes.trimEnd()}
 </tv>`;
 
-// Διασφάλιση ότι υπάρχει ο φάκελος data
-if (!fs.existsSync("data")) fs.mkdirSync("data");
+fs.writeFileSync(path.join(DATA_DIR, "epg.xml"), finalXml, "utf-8");
 
-fs.writeFileSync("data/epg.xml", finalXml, "utf-8");
-console.log(`✅ Επιτυχία! Δημιουργήθηκε το EPG με ${foundChannelIds.size} κανάλια.`);
+console.log(`✅ EPG ready: ${foundChannelIds.size} channels, ${cleanPrograms.length} programmes`);
