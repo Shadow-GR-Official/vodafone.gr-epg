@@ -10,7 +10,7 @@ const files = fs.readdirSync(DATA_DIR)
 if (!files.length) {
   console.error("No raw_*.json files found!");
   process.exit(1);
-});
+};
 
 // ------------------ helpers ------------------
 
