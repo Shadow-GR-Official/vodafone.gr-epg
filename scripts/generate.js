@@ -10,7 +10,7 @@ const files = fs.readdirSync(DATA_DIR)
 if (!files.length) {
   console.error("No raw_*.json files found!");
   process.exit(1);
-};
+}
 
 // ------------------ helpers ------------------
 
@@ -23,7 +23,7 @@ function escapeXML(str = "") {
     .replace(/'/g, "&apos;");
 }
 
-// σωστό XMLTV datetime με Europe/Athens offset (DST safe)
+// σωστό XMLTV datetime (Kodi compatible)
 function fmt(dateValue) {
   if (!dateValue) return null;
 
@@ -58,7 +58,7 @@ function fmt(dateValue) {
   return `${p.year}${p.month}${p.day}${hh}${p.minute}${p.second} ${offsetStr}`;
 }
 
-// ------------------ LOAD CATEGORY MAP (NEW) ------------------
+// ------------------ LOAD CATEGORY MAP ------------------
 
 const CATEGORY_FILE = path.join(DATA_DIR, "category.json");
 
@@ -72,8 +72,7 @@ if (fs.existsSync(CATEGORY_FILE)) {
 let channelNamesMap = {};
 let allPrograms = [];
 
-// φόρτωση όλων των ημερών
-files.forEach(file => {
+for (const file of files) {
   const raw = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf-8"));
 
   if (Array.isArray(raw.channels)) {
@@ -85,7 +84,7 @@ files.forEach(file => {
   if (Array.isArray(raw.programs)) {
     allPrograms.push(...raw.programs);
   }
-});
+}
 
 // ------------------ dedupe ------------------
 
@@ -121,18 +120,10 @@ cleanPrograms.forEach(p => {
   const chId = p.channelUuid || "unknown";
   const chName = channelNamesMap[chId] || chId;
 
+  // CHANNEL (NO category here - Kodi does NOT support it)
   if (!foundChannelIds.has(chId)) {
-
-    const cat = categoryMap[chName];
-
     channelNodes += `  <channel id="${escapeXML(chId)}">\n`;
     channelNodes += `    <display-name>${escapeXML(chName)}</display-name>\n`;
-
-    // ---------------- CATEGORY (NEW) ----------------
-    if (cat) {
-      channelNodes += `    <category lang="el">${escapeXML(cat)}</category>\n`;
-    }
-
     channelNodes += `  </channel>\n`;
 
     foundChannelIds.add(chId);
@@ -150,6 +141,12 @@ cleanPrograms.forEach(p => {
     programmeNodes += `    <desc lang="el">${escapeXML(p.description)}</desc>\n`;
   }
 
+  // ---------------- CATEGORY (FIXED FOR KODI) ----------------
+  const cat = categoryMap[chName];
+  if (cat) {
+    programmeNodes += `    <category lang="el">${escapeXML(cat)}</category>\n`;
+  }
+
   programmeNodes += `  </programme>\n`;
 });
 
@@ -163,4 +160,4 @@ ${programmeNodes.trimEnd()}
 
 fs.writeFileSync(path.join(DATA_DIR, "epg.xml"), finalXml, "utf-8");
 
-console.log(`✅ EPG ready: ${foundChannelIds.size} channels, ${cleanPrograms.length} programmes`);
+console.log(`✔ EPG ready: ${foundChannelIds.size} channels, ${cleanPrograms.length} programmes`);
