@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/Shadow-GR-Official/vodafone.gr-epg/blob/main/vodafone.gr-epg.png" alt="vodafone.gr-epg" width="800">
+  <img src="https://github.com/Shadow-GR-Official/vodafone.gr-epg/blob/main/vodafone.gr-epg.png" alt="vodafone.gr-epg" width="1000">
 </p>
 
 ΠΡΟΣΟΧΉ! Ο οδηγός ηλεκτρονικού προγράμματος περιλαμβάνει όλα τα κανάλια της λίστας VODAFONE GR  TV μόνο!
