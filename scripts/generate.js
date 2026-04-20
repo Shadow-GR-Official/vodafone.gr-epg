@@ -10,7 +10,7 @@ const files = fs.readdirSync(DATA_DIR)
 if (!files.length) {
   console.error("No raw_*.json files found!");
   process.exit(1);
-}
+});
 
 // ------------------ helpers ------------------
 
@@ -49,7 +49,6 @@ function fmt(dateValue) {
 
   let hh = p.hour === "24" ? "00" : p.hour;
 
-  // υπολογισμός offset σωστά (+0200 / +0300)
   const tzOffset = -new Date(d.toLocaleString("en-US", { timeZone: "UTC" }))
     .getTimezoneOffset();
 
@@ -57,6 +56,15 @@ function fmt(dateValue) {
   const offsetStr = `${offsetHours >= 0 ? "+" : "-"}${String(Math.abs(offsetHours)).padStart(2, "0")}00`;
 
   return `${p.year}${p.month}${p.day}${hh}${p.minute}${p.second} ${offsetStr}`;
+}
+
+// ------------------ LOAD CATEGORY MAP (NEW) ------------------
+
+const CATEGORY_FILE = path.join(DATA_DIR, "category.json");
+
+let categoryMap = {};
+if (fs.existsSync(CATEGORY_FILE)) {
+  categoryMap = JSON.parse(fs.readFileSync(CATEGORY_FILE, "utf-8"));
 }
 
 // ------------------ merge data ------------------
@@ -111,12 +119,20 @@ const foundChannelIds = new Set();
 
 cleanPrograms.forEach(p => {
   const chId = p.channelUuid || "unknown";
+  const chName = channelNamesMap[chId] || chId;
 
   if (!foundChannelIds.has(chId)) {
-    const name = channelNamesMap[chId] || `Channel ${chId}`;
+
+    const cat = categoryMap[chName];
 
     channelNodes += `  <channel id="${escapeXML(chId)}">\n`;
-    channelNodes += `    <display-name>${escapeXML(name)}</display-name>\n`;
+    channelNodes += `    <display-name>${escapeXML(chName)}</display-name>\n`;
+
+    // ---------------- CATEGORY (NEW) ----------------
+    if (cat) {
+      channelNodes += `    <category lang="el">${escapeXML(cat)}</category>\n`;
+    }
+
     channelNodes += `  </channel>\n`;
 
     foundChannelIds.add(chId);
