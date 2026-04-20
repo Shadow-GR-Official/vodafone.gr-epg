@@ -39,8 +39,11 @@ jobs:
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
             echo "Fetching $DATE"
 
-            curl -s -L "https://www.vodafone.gr/api/tv/programma-live/$DATE" \
-              -o "data/raw_$DATE.json"
+            curl -s -L \
+               --connect-timeout 1000 \
+               --max-time 3000 \
+               "https://www.vodafone.gr/api/tv/programma-live/$DATE" \
+             -o "data/raw_$DATE.json"
 
             # αν το αρχείο είναι άδειο, διαγραφή
             if [ ! -s "data/raw_$DATE.json" ]; then
