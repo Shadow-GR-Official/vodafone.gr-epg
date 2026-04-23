@@ -34,7 +34,7 @@ jobs:
 
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          for i in {0..7}
+          for i in {0..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
             echo "Fetching $DATE"
