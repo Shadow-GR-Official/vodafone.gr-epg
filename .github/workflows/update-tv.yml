@@ -32,7 +32,7 @@ jobs:
       - name: Create data folder
         run: mkdir -p data
 
-      - name: Fetch Vodafone JSON (Optimized Multi-day)
+      - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
           for i in {0..6}
           do
@@ -40,24 +40,24 @@ jobs:
             
             if [ $i -eq 0 ]; then
               echo "Fetching multi-day EPG starting from $DATE"
+
               curl -s -L \
-                -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
                 --connect-timeout 1000 \
-                --max-time 3000 \
-                --retry 10 \
-                --retry-delay 5 \
-                "https://vodafone.gr" \
-                -o "data/raw_$DATE.json"
-                
-              # Αν για κάποιο λόγο αποτύχει το API, βάζουμε άδειο array για να μη σπάσει το build
+                 --max-time 3000 \
+                  --retry 10 \
+                  --retry-delay 5 \
+                    "https://vodafone.gr" \
+                      -o "data/raw_$DATE.json"
+
+              # αν το αρχείο είναι άδειο, διαγραφή
               if [ ! -s "data/raw_$DATE.json" ]; then
-                echo "Warning: API returned empty data for $DATE"
-                echo "[]" > "data/data/raw_$DATE.json"
+                echo "No data for $DATE"
+                rm -f "data/raw_$DATE.json"
               fi
             else
-              # Για τις υπόλοιπες μέρες δημιουργούμε άδεια αρχεία
-              # Το API τα δίνει όλα στο πρώτο request, οπότε γλιτώνουμε το duplicate μέγεθος
-              echo "Creating empty placeholder for $DATE to prevent duplicates"
+              # Δημιουργία άδειου placeholder για τις επόμενες ημέρες
+              # για να μην κατεβαίνουν διπλότυπα δεδομένα
+              echo "Creating placeholder for $DATE to avoid duplicates"
               echo "[]" > "data/raw_$DATE.json"
             fi
           done
