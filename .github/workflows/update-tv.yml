@@ -34,30 +34,34 @@ jobs:
 
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
+          # 1. Κατέβασμα όλων των ημερών ακριβώς με τον παλιό τρόπο που δουλεύει
           for i in {0..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
-            
-            if [ $i -eq 0 ]; then
-              echo "Fetching multi-day EPG starting from $DATE"
+            echo "Fetching $DATE"
 
-              curl -s -L \
-                --connect-timeout 1000 \
-                 --max-time 3000 \
-                  --retry 10 \
-                  --retry-delay 5 \
-                    "https://vodafone.gr" \
-                      -o "data/raw_$DATE.json"
+            curl -s -L \
+              --connect-timeout 1000 \
+               --max-time 3000 \
+                --retry 10 \
+                --retry-delay 5 \
+                  "https://www.vodafone.gr/api/tv/programma-live/$DATE" \
+                    -o "data/raw_$DATE.json"
 
-              # αν το αρχείο είναι άδειο, διαγραφή
-              if [ ! -s "data/raw_$DATE.json" ]; then
-                echo "No data for $DATE"
-                rm -f "data/raw_$DATE.json"
-              fi
-            else
-              # Δημιουργία άδειου placeholder για τις επόμενες ημέρες
-              # για να μην κατεβαίνουν διπλότυπα δεδομένα
-              echo "Creating placeholder for $DATE to avoid duplicates"
+            # αν το αρχείο είναι άδειο, διαγραφή
+            if [ ! -s "data/raw_$DATE.json" ]; then
+              echo "No data for $DATE"
+              rm -f "data/raw_$DATE.json"
+            fi
+          done
+
+          # 2. Το "μαγικό" κόλπο: Αδειάζουμε τα duplicate δεδομένα από τις μέρες 1 έως 6
+          # Έτσι το generate.js θα βρει τα αρχεία, δεν θα κρασάρει, και το XML θα βγει μικρό!
+          for i in {1..6}
+          do
+            DATE=$(date -d "+$i day" +'%Y-%m-%d')
+            if [ -f "data/raw_$DATE.json" ]; then
+              echo "Cleaning duplicates from $DATE"
               echo "[]" > "data/raw_$DATE.json"
             fi
           done
