@@ -34,7 +34,7 @@ jobs:
 
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          # 1. Κατέβασμα όλων των ημερών ακριβώς με τον παλιό τρόπο που δουλεύει
+          # 1. Κατέβασμα όλων των ημερών με τον παλιό τρόπο
           for i in {0..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
@@ -42,11 +42,11 @@ jobs:
 
             curl -s -L \
               --connect-timeout 1000 \
-               --max-time 3000 \
-                --retry 10 \
-                --retry-delay 5 \
-                  "https://www.vodafone.gr/api/tv/programma-live/$DATE" \
-                    -o "data/raw_$DATE.json"
+              --max-time 3000 \
+              --retry 10 \
+              --retry-delay 5 \
+              "https://www.vodafone.gr/api/tv/programma-live/$DATE" \
+              -o "data/raw_$DATE.json"
 
             # αν το αρχείο είναι άδειο, διαγραφή
             if [ ! -s "data/raw_$DATE.json" ]; then
@@ -55,8 +55,13 @@ jobs:
             fi
           done
 
-          # 2. Το "μαγικό" κόλπο: Αδειάζουμε τα duplicate δεδομένα από τις μέρες 1 έως 6
-          # Έτσι το generate.js θα βρει τα αρχεία, δεν θα κρασάρει, και το XML θα βγει μικρό!
+      - name: Generate XMLTV + M3U
+        run: node scripts/generate.js
+
+      - name: Clean duplicates for GitHub (Post-Processing)
+        run: |
+          # 2. Αδειάζουμε τα duplicate δεδομένα ΜΕΤΑ την παραγωγή του XML
+          # Έτσι το generate.js βρήκε τα δεδομένα του, αλλά στο GitHub ανεβαίνουν άδεια αρχεία!
           for i in {1..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
@@ -65,9 +70,6 @@ jobs:
               echo "[]" > "data/raw_$DATE.json"
             fi
           done
-
-      - name: Generate XMLTV + M3U
-        run: node scripts/generate.js
 
       - name: Commit & push
         run: |
