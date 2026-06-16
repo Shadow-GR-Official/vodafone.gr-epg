@@ -34,9 +34,6 @@ jobs:
 
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          # ΑΝΤΙΚΑΤΑΣΤΑΣΗ: Σβήνουμε το παλιό XML για να δημιουργηθεί 100% από την αρχή χωρίς cache
-          rm -f epg.xml data/epg.xml
-
           # 1. Κατέβασμα όλων των ημερών ακριβώς με τον παλιό τρόπο που δουλεύει
           for i in {0..6}
           do
@@ -52,7 +49,7 @@ jobs:
                     -o "data/raw_$DATE.json"
 
             # ΑΣΦΑΛΕΙΑ: Αν η Vodafone επέστρεψε HTML (Incapsula block) ή το αρχείο είναι άδειο, 
-            # το μετατρέπουμε σε έγκυρο JSON [] για να ΜΗΝ κρασάρει το generate.js στη γραμμή 76
+            # το μετατρέπουμε σε έγκυρο JSON [] για να ΜΗΝ κρασάρει το generate.js
             if [ ! -s "data/raw_$DATE.json" ] || grep -q -i "<html" "data/raw_$DATE.json"; then
               echo "Warning: Blocked by Incapsula or empty data for $DATE. Using safe fallback []."
               echo "[]" > "data/raw_$DATE.json"
@@ -70,7 +67,13 @@ jobs:
           done
 
       - name: Generate XMLTV + M3U
-        run: node scripts/generate.js
+        run: |
+          # ΟΛΙΚΗ ΔΙΑΓΡΑΦΗ ΙΣΤΟΡΙΚΟΥ: Σβήνουμε το παλιό epg.xml από παντού 
+          # για να αναγκάσουμε το generate.js να κάνει πλήρη αντικατάσταση (Overwrite)
+          rm -f epg.xml data/epg.xml
+          
+          # Τρέχουμε τη δημιουργία του νέου αρχείου
+          node scripts/generate.js
 
       - name: Commit & push
         run: |
