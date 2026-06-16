@@ -68,11 +68,15 @@ jobs:
 
       - name: Generate XMLTV + M3U
         run: |
-          # ΟΛΙΚΗ ΔΙΑΓΡΑΦΗ ΙΣΤΟΡΙΚΟΥ: Σβήνουμε το παλιό epg.xml από παντού 
-          # για να αναγκάσουμε το generate.js να κάνει πλήρη αντικατάσταση (Overwrite)
-          rm -f epg.xml data/epg.xml
+          # ΔΗΜΙΟΥΡΓΙΑ ΑΔΕΙΟΥ XML ΓΙΑ OVERWRITE: 
+          # Φτιάχνουμε μια έγκυρη άδεια δομή XMLTV ώστε το Node να μην βρει παλιό ιστορικό 
+          # και να κάνει υποχρεωτικά reset τη βάση δεδομένων του.
+          EMPTY_XML='<?xml version="1.0" encoding="UTF-8"?><tv></tv>'
           
-          # Τρέχουμε τη δημιουργία του νέου αρχείου
+          echo "$EMPTY_XML" > epg.xml
+          echo "$EMPTY_XML" > data/epg.xml
+          
+          # Τρέχουμε τη δημιουργία
           node scripts/generate.js
 
       - name: Commit & push
