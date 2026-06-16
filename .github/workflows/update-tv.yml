@@ -34,8 +34,8 @@ jobs:
 
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          # ΠΛΗΡΗΣ ΑΝΤΙΚΑΤΑΣΤΑΣΗ: Σβήνουμε τα παλιά JSON για να ξεκινήσει η διαδικασία από το μηδέν
-          rm -f data/raw_*.json
+          # ΑΝΤΙΚΑΤΑΣΤΑΣΗ: Σβήνουμε το παλιό XML για να δημιουργηθεί 100% από την αρχή χωρίς cache
+          rm -f epg.xml data/epg.xml
 
           # 1. Κατέβασμα όλων των ημερών ακριβώς με τον παλιό τρόπο που δουλεύει
           for i in {0..6}
@@ -51,15 +51,15 @@ jobs:
                   "https://vodafone.gr" \
                     -o "data/raw_$DATE.json"
 
-            # αν το αρχείο είναι άδειο, διαγραφή
-            if [ ! -s "data/raw_$DATE.json" ]; then
-              echo "No data for $DATE"
-              rm -f "data/raw_$DATE.json"
+            # ΑΣΦΑΛΕΙΑ: Αν η Vodafone επέστρεψε HTML (Incapsula block) ή το αρχείο είναι άδειο, 
+            # το μετατρέπουμε σε έγκυρο JSON [] για να ΜΗΝ κρασάρει το generate.js στη γραμμή 76
+            if [ ! -s "data/raw_$DATE.json" ] || grep -q -i "<html" "data/raw_$DATE.json"; then
+              echo "Warning: Blocked by Incapsula or empty data for $DATE. Using safe fallback []."
+              echo "[]" > "data/raw_$DATE.json"
             fi
           done
 
           # 2. Το "μαγικό" κόλπο: Αδειάζουμε τα duplicate δεδομένα από τις μέρες 1 έως 6
-          # Έτσι το generate.js θα βρει τα αρχεία, δεν θα κρασάρει, και το XML θα βγει μικρό!
           for i in {1..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
@@ -78,6 +78,7 @@ jobs:
           git config user.email "bot@example.com"
 
           git add data/
+          git add epg.xml || true
 
           if git diff --cached --quiet; then
             echo "No changes"
