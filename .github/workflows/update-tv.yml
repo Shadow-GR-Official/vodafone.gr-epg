@@ -34,7 +34,11 @@ jobs:
 
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          # 1. Κατέβασμα όλων των ημερών ακριβώς με τον παλιό τρόπο που δουλεύει
+          # ΚΑΘΑΡΙΣΜΟΣ: Σβήνουμε όλα τα παλιά JSON για να μην τα ξαναδιαβάσει το generate.js
+          echo "Cleaning up old cached JSON files..."
+          rm -f data/raw_*.json
+
+          # 1. Κατέβασμα όλων των ημερών με τον παλιό τρόπο
           for i in {0..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
@@ -45,7 +49,7 @@ jobs:
                --max-time 3000 \
                 --retry 10 \
                 --retry-delay 5 \
-                  "https://www.vodafone.gr/api/tv/programma-live/$DATE" \
+                  "https://vodafone.gr" \
                     -o "data/raw_$DATE.json"
 
             # αν το αρχείο είναι άδειο, διαγραφή
@@ -55,8 +59,7 @@ jobs:
             fi
           done
 
-          # 2. Το "μαγικό" κόλπο: Αδειάζουμε τα duplicate δεδομένα από τις μέρες 1 έως 6
-          # Έτσι το generate.js θα βρει τα αρχεία, δεν θα κρασάρει, και το XML θα βγει μικρό!
+          # 2. Αδειάζουμε τα duplicate δεδομένα από τις μέρες 1 έως 6
           for i in {1..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
@@ -74,7 +77,10 @@ jobs:
           git config user.name "epg-bot"
           git config user.email "bot@example.com"
 
+          # Πριν το commit, σβήνουμε τα άδεια placeholders για να μην γεμίζει το repo
+          rm -f data/raw_*.json
           git add data/
+          git add epg.xml || true # Πρόσθεσε το epg.xml αν βγαίνει στο root
 
           if git diff --cached --quiet; then
             echo "No changes"
