@@ -63,22 +63,12 @@ jobs:
               --max-time 3000 \
               --retry 10 \
               --retry-delay 5 \
-              "https://vodafone.gr/api/tv/programma-live/$DATE" \
+              "https://vodafone.gr" \
               -o "data/raw_$DATE.json"
 
             # ΑΣΦΑΛΕΙΑ: Αν η Vodafone επέστρεψε HTML (Incapsula block) ή είναι άδειο
             if [ ! -s "data/raw_$DATE.json" ] || grep -q -i "<html" "data/raw_$DATE.json"; then
               echo "Warning: Blocked or empty data for $DATE. Using safe fallback []."
-              echo "[]" > "data/raw_$DATE.json"
-            fi
-          done
-
-          # Αδειάζουμε τα duplicate δεδομένα από τις μέρες 1 έως 6 για να μειωθεί το μέγεθος
-          for i in {1..6}
-          do
-            DATE=$(date -d "+$i day" +'%Y-%m-%d')
-            if [ -f "data/raw_$DATE.json" ]; then
-              echo "Cleaning duplicates from $DATE"
               echo "[]" > "data/raw_$DATE.json"
             fi
           done
@@ -91,7 +81,7 @@ jobs:
           git config user.name "epg-bot"
           git config user.email "bot@example.com"
 
-          # Προσθέτουμε μόνο το epg.xml και τα 7 τρέχοντα JSON (τα 6 είναι άδεια)
+          # Προσθέτουμε μόνο το epg.xml και τα 7 τρέχοντα JSON (αυτή τη φορά γεμάτα δεδομένα)
           git add data/
 
           if git diff --cached --quiet; then
