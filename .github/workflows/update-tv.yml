@@ -34,7 +34,7 @@ jobs:
 
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          # 1. Κατέβασμα όλων των ημερών ακριβώς με τον παλιό τρόπο που δουλεύει
+          # 1. Κατέβασμα όλων των ημερών κανονικά (όπως δούλευε πάντα στο αρχικό σου script)
           for i in {0..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
@@ -48,35 +48,21 @@ jobs:
                   "https://vodafone.gr" \
                     -o "data/raw_$DATE.json"
 
-            # ΑΣΦΑΛΕΙΑ: Αν η Vodafone επέστρεψε HTML (Incapsula block) ή το αρχείο είναι άδειο, 
-            # το μετατρέπουμε σε έγκυρο JSON [] για να ΜΗΝ κρασάρει το generate.js
+            # ΑΣΦΑΛΕΙΑ: Αν επέστρεψε HTML (Incapsula block) ή είναι άδειο, 
+            # βάζουμε έγκυρο JSON [] για να μην κρασάρει το generate.js
             if [ ! -s "data/raw_$DATE.json" ] || grep -q -i "<html" "data/raw_$DATE.json"; then
-              echo "Warning: Blocked by Incapsula or empty data for $DATE. Using safe fallback []."
-              echo "[]" > "data/raw_$DATE.json"
-            fi
-          done
-
-          # 2. Το "μαγικό" κόλπο: Αδειάζουμε τα duplicate δεδομένα από τις μέρες 1 έως 6
-          for i in {1..6}
-          do
-            DATE=$(date -d "+$i day" +'%Y-%m-%d')
-            if [ -f "data/raw_$DATE.json" ]; then
-              echo "Cleaning duplicates from $DATE"
+              echo "Warning: Blocked or empty data for $DATE. Using safe fallback []."
               echo "[]" > "data/raw_$DATE.json"
             fi
           done
 
       - name: Generate XMLTV + M3U
         run: |
-          # ΔΗΜΙΟΥΡΓΙΑ ΑΔΕΙΟΥ XML ΓΙΑ OVERWRITE: 
-          # Φτιάχνουμε μια έγκυρη άδεια δομή XMLTV ώστε το Node να μην βρει παλιό ιστορικό 
-          # και να κάνει υποχρεωτικά reset τη βάση δεδομένων του.
-          EMPTY_XML='<?xml version="1.0" encoding="UTF-8"?><tv></tv>'
+          # ΟΛΙΚΗ ΔΙΑΓΡΑΦΗ ΙΣΤΟΡΙΚΟΥ: Σβήνουμε το παλιό epg.xml 
+          # για να αναγκάσουμε το generate.js να κάνει πλήρη αντικατάσταση (Overwrite)
+          rm -f epg.xml data/epg.xml
           
-          echo "$EMPTY_XML" > epg.xml
-          echo "$EMPTY_XML" > data/epg.xml
-          
-          # Τρέχουμε τη δημιουργία
+          # Τρέχουμε τη δημιουργία από το μηδέν
           node scripts/generate.js
 
       - name: Commit & push
