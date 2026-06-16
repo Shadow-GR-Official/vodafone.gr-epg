@@ -32,43 +32,36 @@ jobs:
       - name: Create data folder
         run: mkdir -p data
 
-      - name: Clean old cached JSON files from GitHub
-        run: |
-          git config user.name "epg-bot"
-          git config user.email "bot@example.com"
-          
-          # Σβήνουμε οριστικά όλα τα παλιά raw JSON που έχουν συσσωρευτεί στο repo
-          if [ -n "$(ls data/raw_*.json 2>/dev/null)" ]; then
-            git rm -f data/raw_*.json || true
-          fi
-          rm -f data/raw_*.json
-
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          # Κατέβασμα των 7 ημερών με Advanced Headers για παράκαμψη του Incapsula
+          # 1. Κατέβασμα όλων των ημερών ακριβώς με τον παλιό τρόπο που δουλεύει
           for i in {0..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
             echo "Fetching $DATE"
 
             curl -s -L \
-              -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
-              -H "Accept: application/json, text/plain, */*" \
-              -H "Accept-Language: el-GR,el;q=0.9,en-US;q=0.8,en;q=0.7" \
-              -H "Cache-Control: no-cache" \
-              -H "Pragma: no-cache" \
-              -H "Referer: https://vodafone.gr" \
-              -H "Origin: https://vodafone.gr" \
               --connect-timeout 1000 \
-              --max-time 3000 \
-              --retry 10 \
-              --retry-delay 5 \
-              "https://vodafone.gr" \
-              -o "data/raw_$DATE.json"
+               --max-time 3000 \
+                --retry 10 \
+                --retry-delay 5 \
+                  "https://www.vodafone.gr/api/tv/programma-live/$DATE" \
+                    -o "data/raw_$DATE.json"
 
-            # ΑΣΦΑΛΕΙΑ: Αν η Vodafone επέστρεψε HTML (Incapsula block) ή είναι άδειο
-            if [ ! -s "data/raw_$DATE.json" ] || grep -q -i "<html" "data/raw_$DATE.json"; then
-              echo "Warning: Blocked or empty data for $DATE. Using safe fallback []."
+            # αν το αρχείο είναι άδειο, διαγραφή
+            if [ ! -s "data/raw_$DATE.json" ]; then
+              echo "No data for $DATE"
+              rm -f "data/raw_$DATE.json"
+            fi
+          done
+
+          # 2. Το "μαγικό" κόλπο: Αδειάζουμε τα duplicate δεδομένα από τις μέρες 1 έως 6
+          # Έτσι το generate.js θα βρει τα αρχεία, δεν θα κρασάρει, και το XML θα βγει μικρό!
+          for i in {1..6}
+          do
+            DATE=$(date -d "+$i day" +'%Y-%m-%d')
+            if [ -f "data/raw_$DATE.json" ]; then
+              echo "Cleaning duplicates from $DATE"
               echo "[]" > "data/raw_$DATE.json"
             fi
           done
@@ -81,7 +74,6 @@ jobs:
           git config user.name "epg-bot"
           git config user.email "bot@example.com"
 
-          # Προσθέτουμε μόνο το epg.xml και τα 7 τρέχοντα JSON (αυτή τη φορά γεμάτα δεδομένα)
           git add data/
 
           if git diff --cached --quiet; then
