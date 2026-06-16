@@ -32,9 +32,20 @@ jobs:
       - name: Create data folder
         run: mkdir -p data
 
+      - name: Clean old cached JSON files from GitHub
+        run: |
+          git config user.name "epg-bot"
+          git config user.email "bot@example.com"
+          
+          # Σβήνουμε οριστικά όλα τα παλιά raw JSON που έχουν συσσωρευτεί στο repo
+          if [ -n "$(ls data/raw_*.json 2>/dev/null)" ]; then
+            git rm -f data/raw_*.json || true
+          fi
+          rm -f data/raw_*.json
+
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          # 1. Κατέβασμα όλων των ημερών κανονικά (όπως δούλευε πάντα στο αρχικό σου script)
+          # Κατέβασμα των 7 ημερών ακριβώς με τον δικό σου αρχικό τρόπο
           for i in {0..6}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
@@ -48,30 +59,33 @@ jobs:
                   "https://vodafone.gr" \
                     -o "data/raw_$DATE.json"
 
-            # ΑΣΦΑΛΕΙΑ: Αν επέστρεψε HTML (Incapsula block) ή είναι άδειο, 
-            # βάζουμε έγκυρο JSON [] για να μην κρασάρει το generate.js
+            # ΑΣΦΑΛΕΙΑ: Αν η Vodafone επέστρεψε HTML (Incapsula block) ή είναι άδειο
             if [ ! -s "data/raw_$DATE.json" ] || grep -q -i "<html" "data/raw_$DATE.json"; then
               echo "Warning: Blocked or empty data for $DATE. Using safe fallback []."
               echo "[]" > "data/raw_$DATE.json"
             fi
           done
 
+          # Αδειάζουμε τα duplicate δεδομένα από τις μέρες 1 έως 6 για να μειωθεί το μέγεθος
+          for i in {1..6}
+          do
+            DATE=$(date -d "+$i day" +'%Y-%m-%d')
+            if [ -f "data/raw_$DATE.json" ]; then
+              echo "Cleaning duplicates from $DATE"
+              echo "[]" > "data/raw_$DATE.json"
+            fi
+          done
+
       - name: Generate XMLTV + M3U
-        run: |
-          # ΟΛΙΚΗ ΔΙΑΓΡΑΦΗ ΙΣΤΟΡΙΚΟΥ: Σβήνουμε το παλιό epg.xml 
-          # για να αναγκάσουμε το generate.js να κάνει πλήρη αντικατάσταση (Overwrite)
-          rm -f epg.xml data/epg.xml
-          
-          # Τρέχουμε τη δημιουργία από το μηδέν
-          node scripts/generate.js
+        run: node scripts/generate.js
 
       - name: Commit & push
         run: |
           git config user.name "epg-bot"
           git config user.email "bot@example.com"
 
+          # Προσθέτουμε μόνο το epg.xml και τα 7 τρέχοντα JSON (τα 6 είναι άδεια)
           git add data/
-          git add epg.xml || true
 
           if git diff --cached --quiet; then
             echo "No changes"
