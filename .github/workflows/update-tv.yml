@@ -37,7 +37,7 @@ jobs:
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
           # 1. Κατέβασμα όλων των ημερών με τον παλιό τρόπο
-          for i in {-7..7}
+          for i in {0..13}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
             echo "Fetching $DATE"
@@ -64,7 +64,7 @@ jobs:
         run: |
           # 2. Αδειάζουμε τα duplicate δεδομένα ΜΕΤΑ την παραγωγή του XML
           # Έτσι το generate.js βρήκε τα δεδομένα του, αλλά στο GitHub ανεβαίνουν άδεια αρχεία!
-          for i in {-7..7}
+          for i in {0..13}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
             if [ -f "data/raw_$DATE.json" ]; then
