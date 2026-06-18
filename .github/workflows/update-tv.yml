@@ -62,7 +62,7 @@ jobs:
         run: |
           # 2. Αδειάζουμε τα duplicate δεδομένα ΜΕΤΑ την παραγωγή του XML
           # Έτσι το generate.js βρήκε τα δεδομένα του, αλλά στο GitHub ανεβαίνουν άδεια αρχεία!
-          for i in {1..6}
+          for i in {-1..7}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
             if [ -f "data/raw_$DATE.json" ]; then
