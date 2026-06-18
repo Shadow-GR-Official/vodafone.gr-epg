@@ -150,7 +150,7 @@ cleanPrograms.forEach(p => {
   programmeNodes += `  </programme>\n`;
 });
 
-// ------------------ write file ------------------
+// ------------------ write EPG file ------------------
 
 const finalXml = `<?xml version="1.0" encoding="UTF-8"?>
 <tv>
@@ -160,4 +160,19 @@ ${programmeNodes.trimEnd()}
 
 fs.writeFileSync(path.join(DATA_DIR, "epg.xml"), finalXml, "utf-8");
 
+// ------------------ build & write M3U file ------------------
+
+let m3uContent = "#EXTM3U\n";
+
+foundChannelIds.forEach(chId => {
+  const chName = channelNamesMap[chId] || chId;
+  const cat = categoryMap[chName] || "Channels"; 
+
+  m3uContent += `#EXTINF:-1 tvg-id="${chId}" tvg-name="${chName}" group-title="${cat}",${chName}\n`;
+  m3uContent += `http://localhost/stream/${chId}\n`; // placeholder URL για τα streams
+});
+
+fs.writeFileSync(path.join(DATA_DIR, "channels.m3u"), m3uContent, "utf-8");
+
 console.log(`✔ EPG ready: ${foundChannelIds.size} channels, ${cleanPrograms.length} programmes`);
+console.log(`✔ M3U Playlist ready: ${path.join(DATA_DIR, "channels.m3u")}`);
