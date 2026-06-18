@@ -168,7 +168,7 @@ foundChannelIds.forEach(chId => {
   const chName = channelNamesMap[chId] || chId;
   const cat = categoryMap[chName] || "Channels"; 
 
-  m3uContent += `#EXTINF:-1 tvg-id="${chId}" tvg-name="${chName}" group-title="${cat}",${chName}\n`;
+  m3uContent += `#EXTINF:-1 tvg-id="${chId}" tvg-name="${chName}" tvg-logo="${logo}" group-title="${cat}",${chName}\n`;
   m3uContent += `http://localhost/stream/${chId}\n`; // placeholder URL για τα streams
 });
 
