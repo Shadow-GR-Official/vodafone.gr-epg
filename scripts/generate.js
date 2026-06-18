@@ -70,6 +70,7 @@ if (fs.existsSync(CATEGORY_FILE)) {
 // ------------------ merge data ------------------
 
 let channelNamesMap = {};
+let channelLogosMap = {}; // Χάρτης για την αποθήκευση των logos
 let allPrograms = [];
 
 for (const file of files) {
@@ -77,7 +78,10 @@ for (const file of files) {
 
   if (Array.isArray(raw.channels)) {
     raw.channels.forEach(ch => {
-      if (ch.uuid) channelNamesMap[ch.uuid] = ch.name;
+      if (ch.uuid) {
+        channelNamesMap[ch.uuid] = ch.name;
+        channelLogosMap[ch.uuid] = ch.logo || ""; // Αποθήκευση του logo από το JSON
+      }
     });
   }
 
@@ -124,6 +128,12 @@ cleanPrograms.forEach(p => {
   if (!foundChannelIds.has(chId)) {
     channelNodes += `  <channel id="${escapeXML(chId)}">\n`;
     channelNodes += `    <display-name>${escapeXML(chName)}</display-name>\n`;
+    
+    // Προσθήκη του logo και στο XMLTV κανάλι
+    if (channelLogosMap[chId]) {
+      channelNodes += `    <icon src="${escapeXML(channelLogosMap[chId])}" />\n`;
+    }
+    
     channelNodes += `  </channel>\n`;
 
     foundChannelIds.add(chId);
@@ -167,6 +177,7 @@ let m3uContent = "#EXTM3U\n";
 foundChannelIds.forEach(chId => {
   const chName = channelNamesMap[chId] || chId;
   const cat = categoryMap[chName] || "Channels"; 
+  const logo = channelLogosMap[chId] || ""; // Ανάκτηση του αποθηκευμένου logo
 
   m3uContent += `#EXTINF:-1 tvg-id="${chId}" tvg-name="${chName}" tvg-logo="${logo}" group-title="${cat}",${chName}\n`;
   m3uContent += `http://localhost/stream/${chId}\n`; // placeholder URL για τα streams
