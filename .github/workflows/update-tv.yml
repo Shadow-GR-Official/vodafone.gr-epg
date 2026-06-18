@@ -34,8 +34,8 @@ jobs:
 
       - name: Fetch Vodafone JSON (multi-day EPG)
         run: |
-          # 1. Κατέβασμα όλων των ημερών με τον παλιό τρόπο
-          for i in {-1..7}
+          # 1. Κατέβασμα 7 ημερών συνολικά: 1 μέρα πίσω (-1) έως 5 μέρες μπροστά (+5)
+          for i in {-1..5}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
             echo "Fetching $DATE"
@@ -45,7 +45,7 @@ jobs:
               --max-time 3000 \
               --retry 10 \
               --retry-delay 5 \
-              "https://www.vodafone.gr/api/tv/programma-live/$DATE" \
+              "https://vodafone.gr" \
               -o "data/raw_$DATE.json"
 
             # αν το αρχείο είναι άδειο, διαγραφή
@@ -60,9 +60,8 @@ jobs:
 
       - name: Clean duplicates for GitHub (Post-Processing)
         run: |
-          # 2. Αδειάζουμε τα duplicate δεδομένα ΜΕΤΑ την παραγωγή του XML
-          # Έτσι το generate.js βρήκε τα δεδομένα του, αλλά στο GitHub ανεβαίνουν άδεια αρχεία!
-          for i in {-1..7}
+          # 2. Αδειάζουμε τα duplicate δεδομένα για το ίδιο εύρος ημερών {-1..5}
+          for i in {-1..5}
           do
             DATE=$(date -d "+$i day" +'%Y-%m-%d')
             if [ -f "data/raw_$DATE.json" ]; then
