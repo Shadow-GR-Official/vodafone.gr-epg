@@ -1,0 +1,71 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="100" tvg-name="HISTORY CHANNEL" group-title="Channels",HISTORY CHANNEL
+http://localhost/stream/100
+#EXTINF:-1 tvg-id="10006" tvg-name="CNN" group-title="Channels",CNN
+http://localhost/stream/10006
+#EXTINF:-1 tvg-id="10008" tvg-name="EUROSPORT1" group-title="Channels",EUROSPORT1
+http://localhost/stream/10008
+#EXTINF:-1 tvg-id="10009" tvg-name="EUROSPORT2" group-title="Channels",EUROSPORT2
+http://localhost/stream/10009
+#EXTINF:-1 tvg-id="10012" tvg-name="MAD TV" group-title="Channels",MAD TV
+http://localhost/stream/10012
+#EXTINF:-1 tvg-id="10015" tvg-name="Insight TV" group-title="Channels",Insight TV
+http://localhost/stream/10015
+#EXTINF:-1 tvg-id="10016" tvg-name="Cartoonito" group-title="Channels",Cartoonito
+http://localhost/stream/10016
+#EXTINF:-1 tvg-id="10019" tvg-name="MEGA CHANNEL" group-title="Channels",MEGA CHANNEL
+http://localhost/stream/10019
+#EXTINF:-1 tvg-id="103" tvg-name="TV5 MONDE" group-title="Channels",TV5 MONDE
+http://localhost/stream/103
+#EXTINF:-1 tvg-id="104" tvg-name="BBC WORLD NEWS" group-title="Channels",BBC WORLD NEWS
+http://localhost/stream/104
+#EXTINF:-1 tvg-id="109" tvg-name="FOOD NETWORK" group-title="Channels",FOOD NETWORK
+http://localhost/stream/109
+#EXTINF:-1 tvg-id="119" tvg-name="EURONEWS" group-title="Channels",EURONEWS
+http://localhost/stream/119
+#EXTINF:-1 tvg-id="132" tvg-name="AL JAZEERA" group-title="Channels",AL JAZEERA
+http://localhost/stream/132
+#EXTINF:-1 tvg-id="147" tvg-name="IDX" group-title="Channels",IDX
+http://localhost/stream/147
+#EXTINF:-1 tvg-id="148" tvg-name="SKY NEWS" group-title="Channels",SKY NEWS
+http://localhost/stream/148
+#EXTINF:-1 tvg-id="149" tvg-name="FRANCE 24 FR" group-title="Channels",FRANCE 24 FR
+http://localhost/stream/149
+#EXTINF:-1 tvg-id="152" tvg-name="DISCOVERY TLC" group-title="Channels",DISCOVERY TLC
+http://localhost/stream/152
+#EXTINF:-1 tvg-id="154" tvg-name="DISNEY CHANNEL" group-title="Channels",DISNEY CHANNEL
+http://localhost/stream/154
+#EXTINF:-1 tvg-id="157" tvg-name="NHK WORLD" group-title="Channels",NHK WORLD
+http://localhost/stream/157
+#EXTINF:-1 tvg-id="158" tvg-name="TRAVEL CHANNEL" group-title="Channels",TRAVEL CHANNEL
+http://localhost/stream/158
+#EXTINF:-1 tvg-id="159" tvg-name="FX" group-title="Channels",FX
+http://localhost/stream/159
+#EXTINF:-1 tvg-id="160" tvg-name="DISNEY JUNIOR" group-title="Channels",DISNEY JUNIOR
+http://localhost/stream/160
+#EXTINF:-1 tvg-id="161" tvg-name="NAT GEO WILD" group-title="Channels",NAT GEO WILD
+http://localhost/stream/161
+#EXTINF:-1 tvg-id="162" tvg-name="NATIONAL GEOGRAPHIC" group-title="Channels",NATIONAL GEOGRAPHIC
+http://localhost/stream/162
+#EXTINF:-1 tvg-id="163" tvg-name="ANIMAL PLANET" group-title="Channels",ANIMAL PLANET
+http://localhost/stream/163
+#EXTINF:-1 tvg-id="300" tvg-name="VF_PROMO" group-title="Channels",VF_PROMO
+http://localhost/stream/300
+#EXTINF:-1 tvg-id="376" tvg-name="CGTN" group-title="Channels",CGTN
+http://localhost/stream/376
+#EXTINF:-1 tvg-id="380" tvg-name="FX Life" group-title="Channels",FX Life
+http://localhost/stream/380
+#EXTINF:-1 tvg-id="381" tvg-name="LUXE TV" group-title="Channels",LUXE TV
+http://localhost/stream/381
+#EXTINF:-1 tvg-id="382" tvg-name="E! Entertainment" group-title="Channels",E! Entertainment
+http://localhost/stream/382
+#EXTINF:-1 tvg-id="383" tvg-name="Motorvision HD" group-title="Channels",Motorvision HD
+http://localhost/stream/383
+#EXTINF:-1 tvg-id="386" tvg-name="TCM" group-title="Channels",TCM
+http://localhost/stream/386
+#EXTINF:-1 tvg-id="516" tvg-name="MyZen TV" group-title="Channels",MyZen TV
+http://localhost/stream/516
+#EXTINF:-1 tvg-id="700" tvg-name="Arirang" group-title="Channels",Arirang
+http://localhost/stream/700
+#EXTINF:-1 tvg-id="87" tvg-name="DISCOVERY CHANNEL" group-title="Channels",DISCOVERY CHANNEL
+http://localhost/stream/87
